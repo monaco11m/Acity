@@ -1,0 +1,6 @@
+@MassLoad.Api_HostAddress = http://localhost:5216
+
+GET {{MassLoad.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

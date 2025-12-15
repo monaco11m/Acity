@@ -1,0 +1,146 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: acity-postgres
+    environment:
+      POSTGRES_DB: Acity
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - acity-net
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: acity-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - acity-net
+
+  seaweedfs:
+    image: chrislusf/seaweedfs
+    container_name: acity-seaweedfs
+    command: server -dir=/data
+    ports:
+      - "9333:9333"
+      - "8080:8080"
+    networks:
+      - acity-net
+
+  auth-api:
+    build:
+      context: .
+      dockerfile: auth-service/Auth.Api/Dockerfile
+    container_name: auth-api
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=Acity;Username=postgres;Password=123456
+      Jwt__Key: THIS_IS_A_SUPER_SECRET_KEY_123456789
+      Jwt__Issuer: AuthService
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - acity-net
+
+  control-api:
+    build:
+      context: .
+      dockerfile: control-service/Control.Api/Dockerfile
+    container_name: control-api
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=Acity;Username=postgres;Password=123456
+      Jwt__Issuer: AuthService
+      Jwt__Audience: AuthClient
+      Jwt__Key: THIS_IS_A_SUPER_SECRET_KEY_123456789
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__UserName: guest
+      RabbitMQ__Password: guest
+      SeaweedFS__MasterUrl: http://seaweedfs:9333
+      SeaweedFS__VolumeUrl: http://seaweedfs:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      seaweedfs:
+        condition: service_started
+    networks:
+      - acity-net
+
+
+  massload-api:
+    build:
+      context: .
+      dockerfile: massload-service/MassLoad.Api/Dockerfile
+    container_name: massload-api
+    environment:
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__UserName: guest
+      RabbitMQ__Password: guest
+      RabbitMQ__Queue: carga_masiva
+      SeaweedFS__VolumeUrl: http://seaweedfs:8080
+      ControlService__BaseUrl: http://control-api:8080
+    depends_on:
+      - rabbitmq
+      - seaweedfs
+      - control-api
+    networks:
+      - acity-net
+
+  notification-api:
+    build:
+      context: .
+      dockerfile: notification-service/Notification.Api/Dockerfile
+    container_name: notification-api
+    environment:
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__User: guest
+      RabbitMQ__Password: guest
+      RabbitMQ__QueueFinished: carga_finalizada
+      Email__From: no-reply@acity.local
+      Email__SmtpHost: sandbox.smtp.mailtrap.io
+      Email__SmtpPort: 2525
+      Email__User: d31e45e6a59d65
+      Email__Password: d4238d4f0d355f
+    depends_on:
+      - rabbitmq
+    networks:
+      - acity-net
+
+  gateway-api:
+    build:
+      context: .
+      dockerfile: gateway/Gateway.Api/Dockerfile
+    container_name: gateway-api
+    ports:
+      - "5080:8080"
+    environment:
+      Jwt__Issuer: AuthService
+      Jwt__Audience: AuthClient
+      Jwt__Key: THIS_IS_A_SUPER_SECRET_KEY_123456789
+      Services__AuthService__BaseUrl: http://auth-api:8080
+      Services__ControlService__BaseUrl: http://control-api:8080
+    depends_on:
+      - auth-api
+      - control-api
+    networks:
+      - acity-net
+
+networks:
+  acity-net:
+
+volumes:
+  pgdata:
