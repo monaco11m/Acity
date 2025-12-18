@@ -1,7 +1,7 @@
 ﻿using Control.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Control.Infrastructure.Data
+namespace Control.Infrastructure.Persistence
 {
     public class ControlDbContext : DbContext
     {

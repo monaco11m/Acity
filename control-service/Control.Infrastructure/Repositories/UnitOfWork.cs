@@ -1,5 +1,5 @@
 ﻿using Control.Application.Interfaces;
-using Control.Infrastructure.Data;
+using Control.Infrastructure.Persistence;
 
 namespace Control.Infrastructure.Repositories
 {

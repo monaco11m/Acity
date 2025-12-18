@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using System.IO;
 
-namespace Control.Infrastructure.Data
+namespace Control.Infrastructure.Persistence
 {
     public class ControlDbContextFactory : IDesignTimeDbContextFactory<ControlDbContext>
     {

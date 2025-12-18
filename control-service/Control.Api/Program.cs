@@ -1,6 +1,6 @@
 using Control.Application.Interfaces;
 using Control.Application.Services;
-using Control.Infrastructure.Data;
+using Control.Infrastructure.Persistence;
 using Control.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;

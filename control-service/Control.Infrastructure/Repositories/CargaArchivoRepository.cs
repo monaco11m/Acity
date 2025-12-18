@@ -1,6 +1,6 @@
 ﻿using Control.Domain.Entities;
 using Control.Application.Interfaces;
-using Control.Infrastructure.Data;
+using Control.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Control.Infrastructure.Repositories
